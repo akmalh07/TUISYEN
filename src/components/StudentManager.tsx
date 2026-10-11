@@ -52,7 +52,7 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
   const [formData, setFormData] = useState({
     name: '',
     icOrMyKid: '',
-    level: 'Tingkatan 5 (SPM)',
+    level: 'Tahun 1',
     school: '',
     parentName: '',
     parentPhone: '',
@@ -64,10 +64,41 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
     notes: ''
   });
 
-  const availableLevels = [
-    'Tahun 4', 'Tahun 5', 'Tahun 6 (UPSR/KSSR)',
-    'Tingkatan 1', 'Tingkatan 2', 'Tingkatan 3',
-    'Tingkatan 4', 'Tingkatan 5 (SPM)', 'Tingkatan 6 (STPM)'
+  const [isCustomLevelMode, setIsCustomLevelMode] = useState(false);
+  const [customLevelText, setCustomLevelText] = useState('');
+
+  // Primary School (Tahun 1 - 6)
+  const primaryLevels = [
+    'Tahun 1',
+    'Tahun 2',
+    'Tahun 3',
+    'Tahun 4',
+    'Tahun 5',
+    'Tahun 6',
+    'Tahun 6 (UPSR/KSSR)'
+  ];
+
+  // Preschool & Foundation
+  const earlyLevels = [
+    'Tadika (4-5 Tahun)',
+    'Prasekolah (6 Tahun)',
+    'Asas 3M / Pemulihan'
+  ];
+
+  // Secondary School
+  const secondaryLevels = [
+    'Tingkatan 1',
+    'Tingkatan 2',
+    'Tingkatan 3 (Menengah Rendah)',
+    'Tingkatan 4',
+    'Tingkatan 5 (SPM)',
+    'Tingkatan 6 (STPM/STAM)'
+  ];
+
+  const allPresetLevels = [
+    ...primaryLevels,
+    ...earlyLevels,
+    ...secondaryLevels
   ];
 
   // Auto-calculate suggested monthly fee based on selected classes
@@ -96,7 +127,7 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
     setFormData({
       name: '',
       icOrMyKid: '',
-      level: 'Tingkatan 5 (SPM)',
+      level: 'Tahun 1',
       school: '',
       parentName: '',
       parentPhone: '',
@@ -107,12 +138,18 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
       status: 'active',
       notes: ''
     });
+    setIsCustomLevelMode(false);
+    setCustomLevelText('');
     setEditingStudent(null);
     setIsAddModalOpen(true);
   };
 
   const handleOpenEditModal = (student: Student) => {
     setEditingStudent(student);
+    const isStandard = allPresetLevels.includes(student.level);
+    setIsCustomLevelMode(!isStandard);
+    setCustomLevelText(!isStandard ? student.level : '');
+
     setFormData({
       name: student.name,
       icOrMyKid: student.icOrMyKid,
@@ -137,13 +174,21 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
       return;
     }
 
+    const finalLevel = isCustomLevelMode
+      ? (customLevelText.trim() || 'Tahun 1')
+      : formData.level;
+
     if (editingStudent) {
       onUpdateStudent({
         ...editingStudent,
-        ...formData
+        ...formData,
+        level: finalLevel
       });
     } else {
-      onAddStudent(formData);
+      onAddStudent({
+        ...formData,
+        level: finalLevel
+      });
     }
 
     setIsAddModalOpen(false);
@@ -206,9 +251,27 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
             className="text-xs border border-slate-200 rounded-lg px-2.5 py-2 bg-white text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-blue-600"
           >
             <option value="all">Semua Tingkatan/Tahun</option>
-            {availableLevels.map(lvl => (
-              <option key={lvl} value={lvl}>{lvl}</option>
-            ))}
+            <optgroup label="Sekolah Rendah (Tahun 1 - 6)">
+              {primaryLevels.map(lvl => (
+                <option key={lvl} value={lvl}>{lvl}</option>
+              ))}
+            </optgroup>
+            <optgroup label="Prasekolah & Asas">
+              {earlyLevels.map(lvl => (
+                <option key={lvl} value={lvl}>{lvl}</option>
+              ))}
+            </optgroup>
+            <optgroup label="Sekolah Menengah (Tingkatan 1 - 6)">
+              {secondaryLevels.map(lvl => (
+                <option key={lvl} value={lvl}>{lvl}</option>
+              ))}
+            </optgroup>
+            {Array.from(new Set(students.map(s => s.level)))
+              .filter(lvl => !allPresetLevels.includes(lvl))
+              .map(customLvl => (
+                <option key={customLvl} value={customLvl}>{customLvl} (Khas)</option>
+              ))
+            }
           </select>
 
           <select
@@ -421,19 +484,111 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-slate-700 font-medium mb-1">
-                      Tingkatan / Tahun <span className="text-rose-500">*</span>
-                    </label>
-                    <select
-                      value={formData.level}
-                      onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-600 bg-white"
-                    >
-                      {availableLevels.map(lvl => (
-                        <option key={lvl} value={lvl}>{lvl}</option>
-                      ))}
-                    </select>
+                  <div className="sm:col-span-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-slate-800 font-semibold text-xs">
+                        Tingkatan / Tahun Persekolahan <span className="text-rose-500">*</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextState = !isCustomLevelMode;
+                          setIsCustomLevelMode(nextState);
+                          if (nextState) {
+                            setCustomLevelText(formData.level || 'Tahun 1');
+                          }
+                        }}
+                        className="text-[11px] text-blue-700 hover:text-blue-800 font-medium underline"
+                      >
+                        {isCustomLevelMode ? 'Kembali ke Pilihan Senarai' : '✏️ Taip Pilihan Sendiri'}
+                      </button>
+                    </div>
+
+                    {/* Quick Button Selector for Primary School (Tahun 1 - 6) */}
+                    <div className="mb-2.5">
+                      <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider block mb-1">
+                        Pilihan Pantas Sekolah Rendah:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {primaryLevels.map(lvl => {
+                          const isSelected = !isCustomLevelMode && formData.level === lvl;
+                          return (
+                            <button
+                              key={lvl}
+                              type="button"
+                              onClick={() => {
+                                setIsCustomLevelMode(false);
+                                setFormData({ ...formData, level: lvl });
+                              }}
+                              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
+                                isSelected
+                                  ? 'bg-blue-700 text-white border-blue-700 shadow-xs'
+                                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                              }`}
+                            >
+                              {lvl}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {!isCustomLevelMode ? (
+                      <div>
+                        <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider block mb-1">
+                          Atau Pilih dari Senarai Lengkap:
+                        </span>
+                        <select
+                          value={formData.level}
+                          onChange={(e) => {
+                            if (e.target.value === 'custom') {
+                              setIsCustomLevelMode(true);
+                              setCustomLevelText('');
+                            } else {
+                              setFormData({ ...formData, level: e.target.value });
+                            }
+                          }}
+                          className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-600 bg-white font-medium text-slate-800"
+                        >
+                          <optgroup label="Sekolah Rendah (Tahun 1 - 6)">
+                            {primaryLevels.map(lvl => (
+                              <option key={lvl} value={lvl}>{lvl}</option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="Prasekolah & Asas">
+                            {earlyLevels.map(lvl => (
+                              <option key={lvl} value={lvl}>{lvl}</option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="Sekolah Menengah (Tingkatan 1 - 6)">
+                            {secondaryLevels.map(lvl => (
+                              <option key={lvl} value={lvl}>{lvl}</option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="Pilihan Tersuai">
+                            <option value="custom">-- Taip Pilihan Sendiri (Lain-lain) --</option>
+                          </optgroup>
+                        </select>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <span className="text-[10px] text-blue-700 font-semibold uppercase tracking-wider block">
+                          Masukkan Nama Tahun / Tingkatan / Kelas Khas:
+                        </span>
+                        <input
+                          type="text"
+                          required
+                          autoFocus
+                          placeholder="Contoh: Tahun 1 Amanah, Darjah 2, Kelas Mengaji Dewasa, Tahun 3 DLP..."
+                          value={customLevelText}
+                          onChange={(e) => setCustomLevelText(e.target.value)}
+                          className="w-full px-3 py-2 border-2 border-blue-500 rounded-lg focus:outline-hidden bg-white text-xs font-semibold text-slate-900 shadow-xs"
+                        />
+                        <p className="text-[10px] text-slate-500">
+                          Anda boleh menulis apa jua nama tahap atau darjah mengikut kesesuaian pusat tuisyen anda.
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="sm:col-span-2">

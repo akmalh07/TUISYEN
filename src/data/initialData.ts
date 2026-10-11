@@ -99,6 +99,30 @@ export const initialClasses: ClassSession[] = [
     room: 'Bilik Ibnu Sina',
     feePerMonth: 80,
     maxCapacity: 16
+  },
+  {
+    id: 'cls-8',
+    subject: 'Bahasa Melayu & Asas Membaca',
+    level: 'Tahun 1 & 2',
+    dayOfWeek: 'Ahad',
+    startTime: '10:00',
+    endTime: '11:30',
+    tutorName: 'Cikgu Noraini binti Sulaiman',
+    room: 'Bilik Za\'aba',
+    feePerMonth: 55,
+    maxCapacity: 12
+  },
+  {
+    id: 'cls-9',
+    subject: 'Matematik Asas (Tahap 1)',
+    level: 'Tahun 2 & 3',
+    dayOfWeek: 'Ahad',
+    startTime: '11:45',
+    endTime: '13:15',
+    tutorName: 'Cikgu Azman Kassim',
+    room: 'Bilik Al-Khawarizmi',
+    feePerMonth: 60,
+    maxCapacity: 12
   }
 ];
 
@@ -190,6 +214,35 @@ export const initialStudents: Student[] = [
     registrationDate: '2026-02-12',
     status: 'active',
     notes: 'Sangat aktif bertanya soalan dalam kelas sains.'
+  },
+  {
+    id: 'std-8',
+    name: 'Aisyah Humaira binti Zamri',
+    icOrMyKid: '190512-10-3342',
+    level: 'Tahun 1',
+    school: 'SK Seksyen 7 Bangi',
+    parentName: 'Encik Zamri bin Hassan',
+    parentPhone: '0134455667',
+    parentEmail: 'zamri.hassan@gmail.com',
+    registeredClassIds: ['cls-8'],
+    monthlyFee: 55,
+    registrationDate: '2026-03-10',
+    status: 'active',
+    notes: 'Pelajar Tahun 1 yang ceria dan cepat belajar membaca suku kata.'
+  },
+  {
+    id: 'std-9',
+    name: 'Aqil Rayyan bin Shahrul',
+    icOrMyKid: '170314-10-8890',
+    level: 'Tahun 3',
+    school: 'SK Jalan Empat',
+    parentName: 'Puan Norhidayah binti Razak',
+    parentPhone: '0198877665',
+    registeredClassIds: ['cls-9'],
+    monthlyFee: 60,
+    registrationDate: '2026-02-20',
+    status: 'active',
+    notes: 'Tahap 1, perlukan bimbingan hafalan sifir dan operasi asas darab.'
   },
   {
     id: 'std-7',
@@ -295,6 +348,30 @@ export const initialPayments: PaymentRecord[] = [
     status: 'paid',
     referenceNo: 'CASH-0019',
     receivedBy: 'Cikgu Azman'
+  },
+  {
+    id: 'pay-8',
+    receiptNumber: 'RCP-2026-0047',
+    studentId: 'std-8',
+    month: '2026-10',
+    amountDue: 55,
+    amountPaid: 55,
+    paymentMethod: 'DuitNow / Bank Transfer',
+    paymentDate: '2026-10-04',
+    status: 'paid',
+    referenceNo: 'MBB-33291880',
+    receivedBy: 'Cikgu Azman'
+  },
+  {
+    id: 'pay-9',
+    receiptNumber: 'RCP-2026-0048',
+    studentId: 'std-9',
+    month: '2026-10',
+    amountDue: 60,
+    amountPaid: 0,
+    paymentMethod: 'Tunai',
+    status: 'unpaid',
+    receivedBy: 'Pengurusan Tuisyen'
   }
 ];
 
