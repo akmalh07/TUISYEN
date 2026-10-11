@@ -1,0 +1,6 @@
+{
+  "name": "e-Tuisyen Pintar - Sistem Pengurusan Kelas Tuisyen",
+  "description": "Aplikasi pengurusan kelas tuisyen bersepadu merangkumi pendaftaran pelajar, rekod kehadiran, jadual kelas, pengurusan yuran bulanan, cetakan resit rasmi dan integrasi peringatan WhatsApp.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
