@@ -11,11 +11,12 @@ import {
   Printer, 
   PlusCircle, 
   Calendar, 
-  X,
-  CreditCard,
-  MessageCircle,
-  Building,
-  ArrowUpRight
+  X, 
+  CreditCard, 
+  MessageCircle, 
+  Building, 
+  ArrowUpRight,
+  RotateCcw
 } from 'lucide-react';
 import { PaymentRecord, Student, ClassSession, CenterSettings, PaymentStatus, PaymentMethod } from '../types';
 import { formatMonthNameMalay, generateFeeReminderWhatsAppUrl } from '../utils/whatsapp';
@@ -123,6 +124,22 @@ export const FeeBillingHub: React.FC<FeeBillingHubProps> = ({
 
     onUpdatePayment(updated);
     setIsPayModalOpen(false);
+  };
+
+  const handleResetToUnpaid = () => {
+    if (!activePaymentRecord) return;
+    if (confirm(`Adakah anda pasti ingin membatalkan bayaran bagi ${activeStudent?.name}? Status invois ini akan ditukar semula kepada BELUM BAYAR (RM0).`)) {
+      const updated: PaymentRecord = {
+        ...activePaymentRecord,
+        amountPaid: 0,
+        status: 'unpaid',
+        paymentDate: undefined,
+        referenceNo: undefined,
+        notes: 'Bayaran dibatalkan dan status ditetapkan semula kepada Belum Bayar'
+      };
+      onUpdatePayment(updated);
+      setIsPayModalOpen(false);
+    }
   };
 
   const handleSendWhatsAppReminder = (payment: PaymentRecord, student: Student) => {
@@ -379,10 +396,14 @@ export const FeeBillingHub: React.FC<FeeBillingHubProps> = ({
                           {/* Butang: Rekod / Kemaskini Bayaran */}
                           <button
                             onClick={() => handleOpenPayModal(payment, student)}
-                            title="Rekod Bayaran"
-                            className="px-2.5 py-1 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200"
+                            title={isFullyPaid ? "Ubah atau Batal Bayaran" : "Rekod Bayaran"}
+                            className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors border ${
+                              isFullyPaid
+                                ? 'text-slate-700 bg-slate-100 hover:bg-slate-200 border-slate-300'
+                                : 'text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-200'
+                            }`}
                           >
-                            Rekod Bayaran
+                            {isFullyPaid ? 'Ubah / Batal' : 'Rekod Bayaran'}
                           </button>
 
                           {/* Butang: Papar Resit Rasmi */}
@@ -477,20 +498,28 @@ export const FeeBillingHub: React.FC<FeeBillingHubProps> = ({
                     onChange={(e) => setAmountPaidInput(parseFloat(e.target.value) || 0)}
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-600 font-mono text-base font-bold text-slate-900 bg-white"
                   />
-                  <div className="flex gap-2 mt-1.5">
+                  <div className="flex flex-wrap gap-2 mt-1.5">
                     <button
                       type="button"
                       onClick={() => setAmountPaidInput(activePaymentRecord.amountDue)}
-                      className="text-[11px] text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded font-medium"
+                      className="text-[11px] text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2 py-0.5 rounded font-semibold"
                     >
                       Bayar Penuh (RM {activePaymentRecord.amountDue.toFixed(0)})
                     </button>
                     <button
                       type="button"
                       onClick={() => setAmountPaidInput(activePaymentRecord.amountDue / 2)}
-                      className="text-[11px] text-slate-600 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded font-medium"
+                      className="text-[11px] text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-2 py-0.5 rounded font-medium"
                     >
                       Bayar Separuh (50%)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAmountPaidInput(0)}
+                      className="text-[11px] text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2.5 py-0.5 rounded font-semibold flex items-center gap-1"
+                    >
+                      <RotateCcw className="w-3 h-3 text-rose-600" />
+                      Set Semula ke RM0 (Belum Bayar)
                     </button>
                   </div>
                 </div>
@@ -575,20 +604,35 @@ export const FeeBillingHub: React.FC<FeeBillingHubProps> = ({
                 </span>
               </div>
 
-              <div className="pt-4 border-t border-slate-200 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsPayModalOpen(false)}
-                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors font-medium"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors font-semibold shadow-sm"
-                >
-                  Simpan Rekod Bayaran
-                </button>
+              <div className="pt-4 border-t border-slate-200 flex items-center justify-between gap-2">
+                {activePaymentRecord.amountPaid > 0 ? (
+                  <button
+                    type="button"
+                    onClick={handleResetToUnpaid}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-rose-600" />
+                    Batal Bayaran (Set Belum Bayar)
+                  </button>
+                ) : (
+                  <div />
+                )}
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsPayModalOpen(false)}
+                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors font-medium"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors font-semibold shadow-sm"
+                  >
+                    Simpan Rekod Bayaran
+                  </button>
+                </div>
               </div>
 
             </form>

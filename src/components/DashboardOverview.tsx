@@ -83,60 +83,39 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     ? Math.round((todayPresentCount / todayAttendanceRecords.length) * 100)
     : 100;
 
-  // 1. Data for Monthly Fee Collection Trend (Recharts)
-  const monthsTrend = ['2026-06', '2026-07', '2026-08', '2026-09', '2026-10'];
-  const monthLabels: { [key: string]: string } = {
-    '2026-06': 'Jun',
-    '2026-07': 'Julai',
-    '2026-08': 'Ogos',
-    '2026-09': 'Sept',
-    '2026-10': 'Okt (Kini)'
-  };
+  // 1. Data for Monthly Fee Collection Trend (Recharts) - 100% data sebenar
+  // Dapatkan semua bulan yang benar-benar wujud dalam rekod pembayaran
+  const uniqueMonths = Array.from(new Set(payments.map(p => p.month))).sort();
 
-  const feeTrendData = monthsTrend.map(m => {
+  const feeTrendData = uniqueMonths.map(m => {
     const mPayments = payments.filter(p => p.month === m);
-    if (mPayments.length > 0) {
-      const due = mPayments.reduce((sum, p) => sum + p.amountDue, 0);
-      const paid = mPayments.reduce((sum, p) => sum + p.amountPaid, 0);
-      return {
-        bulan: monthLabels[m] || m,
-        Kutipan: paid,
-        Tertunggak: Math.max(0, due - paid),
-        Sasaran: due
-      };
-    } else {
-      // Historical representative trend
-      const baseExpected = 850;
-      const factor = m === '2026-06' ? 0.95 : m === '2026-07' ? 0.98 : 0.92;
-      const paid = Math.round(baseExpected * factor);
-      return {
-        bulan: monthLabels[m] || m,
-        Kutipan: paid,
-        Tertunggak: baseExpected - paid,
-        Sasaran: baseExpected
-      };
-    }
+    const due = mPayments.reduce((sum, p) => sum + p.amountDue, 0);
+    const paid = mPayments.reduce((sum, p) => sum + p.amountPaid, 0);
+    const unpaid = Math.max(0, due - paid);
+
+    return {
+      bulan: formatMonthNameMalay(m),
+      Kutipan: paid,
+      Tertunggak: unpaid,
+      Sasaran: due
+    };
   });
 
-  // 2. Data for Student Attendance by Class/Subject (Recharts)
+  // 2. Data for Student Attendance by Class/Subject (Recharts) - 100% data sebenar
   const attendanceData = classes.map(cls => {
-    const enrolledCount = students.filter(s => s.registeredClassIds.includes(cls.id)).length;
     const classRecords = attendance.filter(a => a.classId === cls.id);
     const present = classRecords.filter(a => a.status === 'present').length;
     const absent = classRecords.filter(a => a.status === 'absent').length;
-    
-    // If not recorded yet, provide realistic average benchmark based on enrolled
-    const effectivePresent = classRecords.length > 0 ? present : Math.max(1, Math.round(enrolledCount * 0.9));
-    const effectiveAbsent = classRecords.length > 0 ? absent : Math.max(0, enrolledCount - effectivePresent);
-    const total = effectivePresent + effectiveAbsent;
-    const rate = total > 0 ? Math.round((effectivePresent / total) * 100) : 100;
+    const totalRecorded = classRecords.length;
+    const rate = totalRecorded > 0 ? Math.round((present / totalRecorded) * 100) : 0;
 
     return {
       subjek: cls.subject.length > 12 ? `${cls.subject.substring(0, 10)}...` : cls.subject,
       namaPenuh: `${cls.subject} (${cls.level})`,
-      Hadir: effectivePresent,
-      TidakHadir: effectiveAbsent,
-      PeratusHadir: rate
+      Hadir: present,
+      TidakHadir: absent,
+      PeratusHadir: rate,
+      totalRecorded
     };
   });
 
@@ -305,40 +284,50 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             </div>
           </div>
 
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={feeTrendData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                <XAxis 
-                  dataKey="bulan" 
-                  tick={{ fontSize: 11, fill: '#64748B' }} 
-                  axisLine={{ stroke: '#E2E8F0' }}
-                  tickLine={false}
-                />
-                <YAxis 
-                  tick={{ fontSize: 11, fill: '#64748B' }} 
-                  axisLine={false} 
-                  tickLine={false}
-                  tickFormatter={(val) => `RM${val}`}
-                />
-                <Tooltip 
-                  formatter={(value: any, name: any) => [`RM ${Number(value).toFixed(2)}`, name]}
-                  contentStyle={{ 
-                    backgroundColor: '#0F172A', 
-                    borderRadius: '8px', 
-                    border: 'none', 
-                    color: '#FFFFFF',
-                    fontSize: '11px',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                  }}
-                  itemStyle={{ color: '#FFFFFF' }}
-                  labelStyle={{ fontWeight: 'bold', color: '#94A3B8', marginBottom: '4px' }}
-                />
-                <Bar dataKey="Kutipan" fill="#2563EB" radius={[4, 4, 0, 0]} name="Kutipan (RM)" maxBarSize={32} />
-                <Bar dataKey="Tertunggak" fill="#F43F5E" radius={[4, 4, 0, 0]} name="Tertunggak (RM)" maxBarSize={32} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {feeTrendData.length > 0 ? (
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={feeTrendData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                  <XAxis 
+                    dataKey="bulan" 
+                    tick={{ fontSize: 11, fill: '#64748B' }} 
+                    axisLine={{ stroke: '#E2E8F0' }}
+                    tickLine={false}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 11, fill: '#64748B' }} 
+                    axisLine={false} 
+                    tickLine={false}
+                    tickFormatter={(val) => `RM${val}`}
+                  />
+                  <Tooltip 
+                    formatter={(value: any, name: any) => [`RM ${Number(value).toFixed(2)}`, name]}
+                    contentStyle={{ 
+                      backgroundColor: '#0F172A', 
+                      borderRadius: '8px', 
+                      border: 'none', 
+                      color: '#FFFFFF',
+                      fontSize: '11px',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                    }}
+                    itemStyle={{ color: '#FFFFFF' }}
+                    labelStyle={{ fontWeight: 'bold', color: '#94A3B8', marginBottom: '4px' }}
+                  />
+                  <Bar dataKey="Kutipan" fill="#2563EB" radius={[4, 4, 0, 0]} name="Kutipan (RM)" maxBarSize={32} />
+                  <Bar dataKey="Tertunggak" fill="#F43F5E" radius={[4, 4, 0, 0]} name="Tertunggak (RM)" maxBarSize={32} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-64 flex flex-col items-center justify-center text-center p-6 bg-slate-50 rounded-lg border border-dashed border-slate-200 text-slate-400">
+              <DollarSign className="w-8 h-8 text-slate-300 mb-2" />
+              <p className="text-xs font-semibold text-slate-600">Tiada Data Rekod Yuran</p>
+              <p className="text-[11px] text-slate-400 mt-1 max-w-xs">
+                Carta trend kutipan akan dijana secara automatik mengikut data sebenar apabila rekod yuran wujud.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Chart 2: Analisis Kehadiran Pelajar Mengikut Subjek Kelas */}
@@ -365,54 +354,64 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             </div>
           </div>
 
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={attendanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                <XAxis 
-                  dataKey="subjek" 
-                  tick={{ fontSize: 10, fill: '#64748B' }} 
-                  axisLine={{ stroke: '#E2E8F0' }}
-                  tickLine={false}
-                />
-                <YAxis 
-                  domain={[0, 100]} 
-                  tick={{ fontSize: 11, fill: '#64748B' }} 
-                  axisLine={false} 
-                  tickLine={false}
-                  tickFormatter={(val) => `${val}%`}
-                />
-                <Tooltip 
-                  formatter={(value: any, name: any, item: any) => {
-                    if (name === 'PeratusHadir') {
-                      return [`${value}% (Hadir: ${item.payload.Hadir}, Tidak: ${item.payload.TidakHadir})`, 'Kadar Kehadiran'];
-                    }
-                    return [value, name];
-                  }}
-                  labelFormatter={(_label, payload) => {
-                    return payload && payload[0] ? payload[0].payload.namaPenuh : '';
-                  }}
-                  contentStyle={{ 
-                    backgroundColor: '#0F172A', 
-                    borderRadius: '8px', 
-                    border: 'none', 
-                    color: '#FFFFFF',
-                    fontSize: '11px',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                  }}
-                  itemStyle={{ color: '#FFFFFF' }}
-                  labelStyle={{ fontWeight: 'bold', color: '#94A3B8', marginBottom: '4px' }}
-                />
-                <Bar 
-                  dataKey="PeratusHadir" 
-                  fill="#059669" 
-                  radius={[4, 4, 0, 0]} 
-                  name="PeratusHadir"
-                  maxBarSize={32} 
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {attendanceData.some(d => d.totalRecorded > 0) ? (
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={attendanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                  <XAxis 
+                    dataKey="subjek" 
+                    tick={{ fontSize: 10, fill: '#64748B' }} 
+                    axisLine={{ stroke: '#E2E8F0' }}
+                    tickLine={false}
+                  />
+                  <YAxis 
+                    domain={[0, 100]} 
+                    tick={{ fontSize: 11, fill: '#64748B' }} 
+                    axisLine={false} 
+                    tickLine={false}
+                    tickFormatter={(val) => `${val}%`}
+                  />
+                  <Tooltip 
+                    formatter={(value: any, name: any, item: any) => {
+                      if (name === 'PeratusHadir') {
+                        return [`${value}% (Hadir: ${item.payload.Hadir}, Tidak: ${item.payload.TidakHadir})`, 'Kadar Kehadiran'];
+                      }
+                      return [value, name];
+                    }}
+                    labelFormatter={(_label, payload) => {
+                      return payload && payload[0] ? payload[0].payload.namaPenuh : '';
+                    }}
+                    contentStyle={{ 
+                      backgroundColor: '#0F172A', 
+                      borderRadius: '8px', 
+                      border: 'none', 
+                      color: '#FFFFFF',
+                      fontSize: '11px',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                    }}
+                    itemStyle={{ color: '#FFFFFF' }}
+                    labelStyle={{ fontWeight: 'bold', color: '#94A3B8', marginBottom: '4px' }}
+                  />
+                  <Bar 
+                    dataKey="PeratusHadir" 
+                    fill="#059669" 
+                    radius={[4, 4, 0, 0]} 
+                    name="PeratusHadir"
+                    maxBarSize={32} 
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-64 flex flex-col items-center justify-center text-center p-6 bg-slate-50 rounded-lg border border-dashed border-slate-200 text-slate-400">
+              <BarChart3 className="w-8 h-8 text-slate-300 mb-2" />
+              <p className="text-xs font-semibold text-slate-600">Belum Ada Rekod Kehadiran Direkodkan</p>
+              <p className="text-[11px] text-slate-400 mt-1 max-w-xs">
+                Peratusan kehadiran akan dipaparkan secara automatik mengikut data sebenar setelah anda mengambil kehadiran sesi.
+              </p>
+            </div>
+          )}
         </div>
 
       </div>
