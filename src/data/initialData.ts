@@ -372,67 +372,351 @@ export const initialPayments: PaymentRecord[] = [
     paymentMethod: 'Tunai',
     status: 'unpaid',
     receivedBy: 'Pengurusan Tuisyen'
+  },
+  // Rekod Bulan September 2026 (2026-09)
+  {
+    id: 'pay-sep-1',
+    receiptNumber: 'RCP-2026-0031',
+    studentId: 'std-1',
+    month: '2026-09',
+    amountDue: 195,
+    amountPaid: 195,
+    paymentMethod: 'DuitNow / Bank Transfer',
+    paymentDate: '2026-09-02',
+    status: 'paid',
+    referenceNo: 'MBB-9122340',
+    receivedBy: 'Cikgu Azman'
+  },
+  {
+    id: 'pay-sep-2',
+    receiptNumber: 'RCP-2026-0032',
+    studentId: 'std-2',
+    month: '2026-09',
+    amountDue: 200,
+    amountPaid: 200,
+    paymentMethod: 'DuitNow / Bank Transfer',
+    paymentDate: '2026-09-03',
+    status: 'paid',
+    referenceNo: 'CIMB-481920',
+    receivedBy: 'Puan Sarah'
+  },
+  {
+    id: 'pay-sep-3',
+    receiptNumber: 'RCP-2026-0033',
+    studentId: 'std-3',
+    month: '2026-09',
+    amountDue: 205,
+    amountPaid: 205,
+    paymentMethod: 'Tunai',
+    paymentDate: '2026-09-05',
+    status: 'paid',
+    referenceNo: 'CASH-0018',
+    receivedBy: 'Cikgu Azman'
+  },
+  {
+    id: 'pay-sep-5',
+    receiptNumber: 'RCP-2026-0034',
+    studentId: 'std-5',
+    month: '2026-09',
+    amountDue: 140,
+    amountPaid: 140,
+    paymentMethod: 'DuitNow / Bank Transfer',
+    paymentDate: '2026-09-04',
+    status: 'paid',
+    referenceNo: 'RHB-712893',
+    receivedBy: 'Cikgu Azman'
+  },
+  {
+    id: 'pay-sep-6',
+    receiptNumber: 'RCP-2026-0035',
+    studentId: 'std-6',
+    month: '2026-09',
+    amountDue: 80,
+    amountPaid: 80,
+    paymentMethod: 'Tunai',
+    paymentDate: '2026-09-05',
+    status: 'paid',
+    referenceNo: 'CASH-0020',
+    receivedBy: 'Cikgu Azman'
+  },
+  {
+    id: 'pay-sep-8',
+    receiptNumber: 'RCP-2026-0036',
+    studentId: 'std-8',
+    month: '2026-09',
+    amountDue: 55,
+    amountPaid: 55,
+    paymentMethod: 'DuitNow / Bank Transfer',
+    paymentDate: '2026-09-04',
+    status: 'paid',
+    referenceNo: 'MBB-229910',
+    receivedBy: 'Cikgu Azman'
+  },
+  // Rekod Bulan Ogos 2026 (2026-08)
+  {
+    id: 'pay-aug-1',
+    receiptNumber: 'RCP-2026-0024',
+    studentId: 'std-1',
+    month: '2026-08',
+    amountDue: 195,
+    amountPaid: 195,
+    paymentMethod: 'DuitNow / Bank Transfer',
+    paymentDate: '2026-08-02',
+    status: 'paid',
+    receivedBy: 'Cikgu Azman'
+  },
+  {
+    id: 'pay-aug-2',
+    receiptNumber: 'RCP-2026-0025',
+    studentId: 'std-2',
+    month: '2026-08',
+    amountDue: 200,
+    amountPaid: 200,
+    paymentMethod: 'DuitNow / Bank Transfer',
+    paymentDate: '2026-08-03',
+    status: 'paid',
+    receivedBy: 'Puan Sarah'
+  },
+  {
+    id: 'pay-aug-3',
+    receiptNumber: 'RCP-2026-0026',
+    studentId: 'std-3',
+    month: '2026-08',
+    amountDue: 205,
+    amountPaid: 205,
+    paymentMethod: 'Tunai',
+    paymentDate: '2026-08-05',
+    status: 'paid',
+    receivedBy: 'Cikgu Azman'
+  },
+  {
+    id: 'pay-aug-4',
+    receiptNumber: 'RCP-2026-0027',
+    studentId: 'std-4',
+    month: '2026-08',
+    amountDue: 125,
+    amountPaid: 125,
+    paymentMethod: 'Tunai',
+    paymentDate: '2026-08-06',
+    status: 'paid',
+    receivedBy: 'Cikgu Azman'
+  },
+  {
+    id: 'pay-aug-5',
+    receiptNumber: 'RCP-2026-0028',
+    studentId: 'std-5',
+    month: '2026-08',
+    amountDue: 140,
+    amountPaid: 140,
+    paymentMethod: 'DuitNow / Bank Transfer',
+    paymentDate: '2026-08-04',
+    status: 'paid',
+    receivedBy: 'Cikgu Azman'
+  },
+  {
+    id: 'pay-aug-6',
+    receiptNumber: 'RCP-2026-0029',
+    studentId: 'std-6',
+    month: '2026-08',
+    amountDue: 80,
+    amountPaid: 80,
+    paymentMethod: 'Tunai',
+    paymentDate: '2026-08-07',
+    status: 'paid',
+    receivedBy: 'Cikgu Azman'
+  },
+  // Rekod Bulan Julai 2026 (2026-07)
+  {
+    id: 'pay-jul-1',
+    receiptNumber: 'RCP-2026-0018',
+    studentId: 'std-1',
+    month: '2026-07',
+    amountDue: 195,
+    amountPaid: 195,
+    paymentMethod: 'DuitNow / Bank Transfer',
+    paymentDate: '2026-07-03',
+    status: 'paid',
+    receivedBy: 'Cikgu Azman'
+  },
+  {
+    id: 'pay-jul-2',
+    receiptNumber: 'RCP-2026-0019',
+    studentId: 'std-2',
+    month: '2026-07',
+    amountDue: 200,
+    amountPaid: 200,
+    paymentMethod: 'DuitNow / Bank Transfer',
+    paymentDate: '2026-07-04',
+    status: 'paid',
+    receivedBy: 'Puan Sarah'
+  },
+  {
+    id: 'pay-jul-3',
+    receiptNumber: 'RCP-2026-0020',
+    studentId: 'std-3',
+    month: '2026-07',
+    amountDue: 205,
+    amountPaid: 205,
+    paymentMethod: 'Tunai',
+    paymentDate: '2026-07-05',
+    status: 'paid',
+    receivedBy: 'Cikgu Azman'
+  },
+  {
+    id: 'pay-jul-4',
+    receiptNumber: 'RCP-2026-0021',
+    studentId: 'std-4',
+    month: '2026-07',
+    amountDue: 125,
+    amountPaid: 125,
+    paymentMethod: 'Tunai',
+    paymentDate: '2026-07-06',
+    status: 'paid',
+    receivedBy: 'Cikgu Azman'
+  },
+  {
+    id: 'pay-jul-5',
+    receiptNumber: 'RCP-2026-0022',
+    studentId: 'std-5',
+    month: '2026-07',
+    amountDue: 140,
+    amountPaid: 140,
+    paymentMethod: 'DuitNow / Bank Transfer',
+    paymentDate: '2026-07-04',
+    status: 'paid',
+    receivedBy: 'Cikgu Azman'
+  },
+  // Rekod Bulan Jun 2026 (2026-06)
+  {
+    id: 'pay-jun-1',
+    receiptNumber: 'RCP-2026-0012',
+    studentId: 'std-1',
+    month: '2026-06',
+    amountDue: 195,
+    amountPaid: 195,
+    paymentMethod: 'DuitNow / Bank Transfer',
+    paymentDate: '2026-06-03',
+    status: 'paid',
+    receivedBy: 'Cikgu Azman'
+  },
+  {
+    id: 'pay-jun-2',
+    receiptNumber: 'RCP-2026-0013',
+    studentId: 'std-2',
+    month: '2026-06',
+    amountDue: 200,
+    amountPaid: 200,
+    paymentMethod: 'DuitNow / Bank Transfer',
+    paymentDate: '2026-06-04',
+    status: 'paid',
+    receivedBy: 'Puan Sarah'
+  },
+  {
+    id: 'pay-jun-3',
+    receiptNumber: 'RCP-2026-0014',
+    studentId: 'std-3',
+    month: '2026-06',
+    amountDue: 205,
+    amountPaid: 205,
+    paymentMethod: 'Tunai',
+    paymentDate: '2026-06-05',
+    status: 'paid',
+    receivedBy: 'Cikgu Azman'
+  },
+  {
+    id: 'pay-jun-5',
+    receiptNumber: 'RCP-2026-0015',
+    studentId: 'std-5',
+    month: '2026-06',
+    amountDue: 140,
+    amountPaid: 140,
+    paymentMethod: 'DuitNow / Bank Transfer',
+    paymentDate: '2026-06-04',
+    status: 'paid',
+    receivedBy: 'Cikgu Azman'
+  },
+  // Rekod Bulan Mei 2026 (2026-05)
+  {
+    id: 'pay-may-1',
+    receiptNumber: 'RCP-2026-0007',
+    studentId: 'std-1',
+    month: '2026-05',
+    amountDue: 195,
+    amountPaid: 195,
+    paymentMethod: 'DuitNow / Bank Transfer',
+    paymentDate: '2026-05-02',
+    status: 'paid',
+    receivedBy: 'Cikgu Azman'
+  },
+  {
+    id: 'pay-may-2',
+    receiptNumber: 'RCP-2026-0008',
+    studentId: 'std-2',
+    month: '2026-05',
+    amountDue: 200,
+    amountPaid: 200,
+    paymentMethod: 'DuitNow / Bank Transfer',
+    paymentDate: '2026-05-03',
+    status: 'paid',
+    receivedBy: 'Puan Sarah'
+  },
+  {
+    id: 'pay-may-3',
+    receiptNumber: 'RCP-2026-0009',
+    studentId: 'std-3',
+    month: '2026-05',
+    amountDue: 205,
+    amountPaid: 205,
+    paymentMethod: 'Tunai',
+    paymentDate: '2026-05-05',
+    status: 'paid',
+    receivedBy: 'Cikgu Azman'
   }
 ];
 
 export const initialAttendance: AttendanceRecord[] = [
-  {
-    id: 'att-1',
-    date: '2026-10-05', // Isnin
-    classId: 'cls-1',
-    studentId: 'std-1',
-    status: 'present',
-    timestamp: '2026-10-05T20:02:00.000Z'
-  },
-  {
-    id: 'att-2',
-    date: '2026-10-05',
-    classId: 'cls-1',
-    studentId: 'std-2',
-    status: 'present',
-    timestamp: '2026-10-05T19:58:00.000Z'
-  },
-  {
-    id: 'att-3',
-    date: '2026-10-05',
-    classId: 'cls-1',
-    studentId: 'std-3',
-    status: 'present',
-    timestamp: '2026-10-05T20:05:00.000Z'
-  },
-  {
-    id: 'att-4',
-    date: '2026-10-06', // Selasa
-    classId: 'cls-2',
-    studentId: 'std-1',
-    status: 'present',
-    timestamp: '2026-10-06T20:01:00.000Z'
-  },
-  {
-    id: 'att-5',
-    date: '2026-10-06',
-    classId: 'cls-2',
-    studentId: 'std-3',
-    status: 'present',
-    timestamp: '2026-10-06T19:55:00.000Z'
-  },
-  {
-    id: 'att-6',
-    date: '2026-10-08', // Khamis
-    classId: 'cls-4',
-    studentId: 'std-1',
-    status: 'present',
-    timestamp: '2026-10-08T19:50:00.000Z'
-  },
-  {
-    id: 'att-7',
-    date: '2026-10-08',
-    classId: 'cls-4',
-    studentId: 'std-4',
-    status: 'absent',
-    notes: 'Demam panas, ibu bapa telah maklumkan',
-    timestamp: '2026-10-08T19:40:00.000Z'
-  }
+  // Isnin 5 Okt 2026 - Matematik SPM (cls-1)
+  { id: 'att-1', date: '2026-10-05', classId: 'cls-1', studentId: 'std-1', status: 'present', timestamp: '2026-10-05T20:02:00.000Z' },
+  { id: 'att-2', date: '2026-10-05', classId: 'cls-1', studentId: 'std-2', status: 'present', timestamp: '2026-10-05T19:58:00.000Z' },
+  { id: 'att-3', date: '2026-10-05', classId: 'cls-1', studentId: 'std-3', status: 'present', timestamp: '2026-10-05T20:05:00.000Z' },
+  
+  // Selasa 6 Okt 2026 - Fizik SPM (cls-2)
+  { id: 'att-4', date: '2026-10-06', classId: 'cls-2', studentId: 'std-1', status: 'present', timestamp: '2026-10-06T20:01:00.000Z' },
+  { id: 'att-5', date: '2026-10-06', classId: 'cls-2', studentId: 'std-3', status: 'present', timestamp: '2026-10-06T19:55:00.000Z' },
+
+  // Rabu 7 Okt 2026 - Kimia SPM (cls-3)
+  { id: 'att-6', date: '2026-10-07', classId: 'cls-3', studentId: 'std-2', status: 'present', timestamp: '2026-10-07T20:00:00.000Z' },
+  { id: 'att-7', date: '2026-10-07', classId: 'cls-3', studentId: 'std-3', status: 'present', timestamp: '2026-10-07T20:03:00.000Z' },
+
+  // Khamis 8 Okt 2026 - BM SPM (cls-4)
+  { id: 'att-8', date: '2026-10-08', classId: 'cls-4', studentId: 'std-1', status: 'present', timestamp: '2026-10-08T19:50:00.000Z' },
+  { id: 'att-9', date: '2026-10-08', classId: 'cls-4', studentId: 'std-4', status: 'absent', notes: 'Demam panas, ibu bapa telah maklumkan', timestamp: '2026-10-08T19:40:00.000Z' },
+
+  // Jumaat 9 Okt 2026 - BI (cls-5)
+  { id: 'att-10', date: '2026-10-09', classId: 'cls-5', studentId: 'std-2', status: 'present', timestamp: '2026-10-09T20:00:00.000Z' },
+  { id: 'att-11', date: '2026-10-09', classId: 'cls-5', studentId: 'std-4', status: 'present', timestamp: '2026-10-09T20:05:00.000Z' },
+  { id: 'att-12', date: '2026-10-09', classId: 'cls-5', studentId: 'std-5', status: 'present', timestamp: '2026-10-09T19:58:00.000Z' },
+
+  // Sabtu 10 Okt 2026 - Add Math (cls-6) & Sains Tahun 6 (cls-7)
+  { id: 'att-13', date: '2026-10-10', classId: 'cls-6', studentId: 'std-5', status: 'present', timestamp: '2026-10-10T10:05:00.000Z' },
+  { id: 'att-14', date: '2026-10-10', classId: 'cls-7', studentId: 'std-6', status: 'present', timestamp: '2026-10-10T14:02:00.000Z' },
+
+  // Ahad 11 Okt 2026 - BM Tahun 1 (cls-8) & Math Tahap 1 (cls-9)
+  { id: 'att-15', date: '2026-10-11', classId: 'cls-8', studentId: 'std-8', status: 'present', timestamp: '2026-10-11T10:00:00.000Z' },
+  { id: 'att-16', date: '2026-10-11', classId: 'cls-9', studentId: 'std-9', status: 'present', timestamp: '2026-10-11T11:45:00.000Z' },
+
+  // Isnin 12 Okt 2026 - Matematik SPM (cls-1)
+  { id: 'att-17', date: '2026-10-12', classId: 'cls-1', studentId: 'std-1', status: 'present', timestamp: '2026-10-12T20:00:00.000Z' },
+  { id: 'att-18', date: '2026-10-12', classId: 'cls-1', studentId: 'std-2', status: 'present', timestamp: '2026-10-12T20:03:00.000Z' },
+  { id: 'att-19', date: '2026-10-12', classId: 'cls-1', studentId: 'std-3', status: 'present', timestamp: '2026-10-12T19:57:00.000Z' },
+
+  // Selasa 13 Okt 2026 - Fizik SPM (cls-2)
+  { id: 'att-20', date: '2026-10-13', classId: 'cls-2', studentId: 'std-1', status: 'present', timestamp: '2026-10-13T20:02:00.000Z' },
+  { id: 'att-21', date: '2026-10-13', classId: 'cls-2', studentId: 'std-3', status: 'excused', notes: 'Urusan keluarga di kampung', timestamp: '2026-10-13T19:30:00.000Z' },
+
+  // Khamis 15 Okt 2026 - BM SPM (cls-4)
+  { id: 'att-22', date: '2026-10-15', classId: 'cls-4', studentId: 'std-1', status: 'present', timestamp: '2026-10-15T19:48:00.000Z' },
+  { id: 'att-23', date: '2026-10-15', classId: 'cls-4', studentId: 'std-4', status: 'absent', notes: 'Ponteng tanpa surat tunjuk sebab', timestamp: '2026-10-15T19:45:00.000Z' }
 ];
 
 export const initialGrades: GradeRecord[] = [

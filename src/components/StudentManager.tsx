@@ -13,10 +13,16 @@ import {
   BookOpen, 
   ExternalLink,
   MessageCircle,
-  FileText
+  FileText,
+  Calendar,
+  LogOut,
+  RotateCcw,
+  UserCheck,
+  UserX,
+  Info
 } from 'lucide-react';
 import { Student, ClassSession, PaymentRecord, AttendanceRecord, GradeRecord, CenterSettings } from '../types';
-import { formatWhatsAppNumber } from '../utils/whatsapp';
+import { formatWhatsAppNumber, formatMonthNameMalay } from '../utils/whatsapp';
 
 interface StudentManagerProps {
   students: Student[];
@@ -48,6 +54,11 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [selectedStudentDetail, setSelectedStudentDetail] = useState<Student | null>(null);
 
+  // Quick Exit Status Modal state
+  const [quickExitStudent, setQuickExitStudent] = useState<Student | null>(null);
+  const [quickExitDate, setQuickExitDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [quickExitReason, setQuickExitReason] = useState<string>('Selesai Peperiksaan SPM / Tamat Pengajian');
+
   // Form State
   const [formData, setFormData] = useState({
     name: '',
@@ -60,6 +71,8 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
     registeredClassIds: [] as string[],
     monthlyFee: 0,
     registrationDate: new Date().toISOString().split('T')[0],
+    exitDate: '',
+    exitReason: '',
     status: 'active' as Student['status'],
     notes: ''
   });
@@ -135,6 +148,8 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
       registeredClassIds: [],
       monthlyFee: 0,
       registrationDate: new Date().toISOString().split('T')[0],
+      exitDate: '',
+      exitReason: '',
       status: 'active',
       notes: ''
     });
@@ -160,7 +175,9 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
       parentEmail: student.parentEmail || '',
       registeredClassIds: student.registeredClassIds,
       monthlyFee: student.monthlyFee,
-      registrationDate: student.registrationDate,
+      registrationDate: student.registrationDate || new Date().toISOString().split('T')[0],
+      exitDate: student.exitDate || '',
+      exitReason: student.exitReason || '',
       status: student.status,
       notes: student.notes || ''
     });
@@ -178,20 +195,57 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
       ? (customLevelText.trim() || 'Tahun 1')
       : formData.level;
 
+    const studentPayload = {
+      ...formData,
+      level: finalLevel,
+      registrationDate: formData.registrationDate || new Date().toISOString().split('T')[0],
+      exitDate: formData.exitDate.trim() ? formData.exitDate : undefined,
+      exitReason: formData.exitReason.trim() ? formData.exitReason : undefined
+    };
+
     if (editingStudent) {
       onUpdateStudent({
         ...editingStudent,
-        ...formData,
-        level: finalLevel
+        ...studentPayload
       });
     } else {
-      onAddStudent({
-        ...formData,
-        level: finalLevel
-      });
+      onAddStudent(studentPayload);
     }
 
     setIsAddModalOpen(false);
+  };
+
+  // Quick mark student as exited / left
+  const handleOpenQuickExit = (student: Student) => {
+    setQuickExitStudent(student);
+    setQuickExitDate(new Date().toISOString().split('T')[0]);
+    setQuickExitReason('Selesai Peperiksaan SPM / Tamat Pengajian');
+  };
+
+  const handleQuickExitSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickExitStudent) return;
+
+    onUpdateStudent({
+      ...quickExitStudent,
+      status: 'inactive',
+      exitDate: quickExitDate,
+      exitReason: quickExitReason
+    });
+
+    setQuickExitStudent(null);
+  };
+
+  // Quick reactivate an exited student
+  const handleReactivateStudent = (student: Student) => {
+    if (confirm(`Aktifkan semula pendaftaran ${student.name}? Tarikh keluar akan dibersihkan dan status ditukar ke Aktif.`)) {
+      onUpdateStudent({
+        ...student,
+        status: 'active',
+        exitDate: undefined,
+        exitReason: undefined
+      });
+    }
   };
 
   // Filter students
@@ -296,6 +350,7 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
                 <th className="py-3 px-4">Nama Pelajar</th>
                 <th className="py-3 px-4">Tingkatan & Sekolah</th>
                 <th className="py-3 px-4">Ibu Bapa / WhatsApp</th>
+                <th className="py-3 px-4">Tarikh Masuk / Keluar</th>
                 <th className="py-3 px-4">Subjek Berdaftar</th>
                 <th className="py-3 px-4 text-right">Yuran Bulanan</th>
                 <th className="py-3 px-4 text-center">Status</th>
@@ -343,6 +398,29 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
                         </a>
                       </td>
 
+                      {/* Tarikh Masuk & Keluar */}
+                      <td className="py-3.5 px-4">
+                        <div className="text-[11px] font-medium text-slate-800 flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-blue-600 shrink-0" />
+                          <span>Masuk: <strong className="font-mono">{student.registrationDate || '-'}</strong></span>
+                        </div>
+                        {student.exitDate ? (
+                          <div className="text-[10px] text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                            <LogOut className="w-3 h-3 text-rose-500 shrink-0" />
+                            <span>Keluar: <strong className="font-mono">{student.exitDate}</strong></span>
+                          </div>
+                        ) : (
+                          <div className="text-[10px] text-slate-500 mt-0.5">
+                            Yuran mula: <span className="font-semibold text-blue-700">{student.registrationDate ? formatMonthNameMalay(student.registrationDate.substring(0, 7)) : '-'}</span>
+                          </div>
+                        )}
+                        {student.exitReason && (
+                          <span className="text-[10px] text-slate-500 truncate max-w-[140px] block mt-0.5" title={student.exitReason}>
+                            ({student.exitReason})
+                          </span>
+                        )}
+                      </td>
+
                       <td className="py-3.5 px-4">
                         <div className="flex flex-wrap gap-1 max-w-xs">
                           {studentClasses.map(cls => (
@@ -379,13 +457,33 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
                         {student.status === 'inactive' && (
                           <span className="inline-flex items-center gap-1 text-rose-700 font-medium text-[11px]">
                             <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                            Berhenti
+                            Keluar
                           </span>
                         )}
                       </td>
 
                       <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center justify-end gap-1">
+                          
+                          {/* Quick Toggle Keluar / Aktifkan Semula */}
+                          {student.status === 'active' ? (
+                            <button
+                              onClick={() => handleOpenQuickExit(student)}
+                              title="Tandakan Pelajar Telah Berhenti / Keluar"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                            >
+                              <UserX className="w-4 h-4" />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleReactivateStudent(student)}
+                              title="Aktifkan Semula Pelajar Ini"
+                              className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors"
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </button>
+                          )}
+
                           <button
                             onClick={() => setSelectedStudentDetail(student)}
                             title="Lihat Profil Lengkap"
@@ -418,7 +516,7 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
                 })
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                  <td colSpan={8} className="py-12 text-center text-slate-400">
                     <p className="text-sm font-medium">Tiada pelajar dijumpai mengikut tapisan anda.</p>
                     <p className="text-xs mt-1">Sila ubah carian atau daftar pelajar baharu sekarang.</p>
                   </td>
@@ -703,21 +801,6 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-600 font-mono font-bold text-slate-900 bg-white"
                     />
                   </div>
-
-                  <div>
-                    <label className="block text-slate-700 font-medium mb-1">
-                      Status Pendaftaran
-                    </label>
-                    <select
-                      value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value as Student['status'] })}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-600 bg-white"
-                    >
-                      <option value="active">Aktif</option>
-                      <option value="suspended">Cuti Sementara</option>
-                      <option value="inactive">Berhenti / Tamat</option>
-                    </select>
-                  </div>
                 </div>
 
                 <div className="mt-3">
@@ -732,6 +815,125 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-600 bg-white"
                   />
                 </div>
+              </div>
+
+              {/* Bahagian 4: Tarikh Pendaftaran & Status Keahlian Pelajar */}
+              <div className="pt-2 border-t border-slate-100 space-y-3">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                  4. Rekod Tarikh Masuk / Mendaftar & Keluar
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  
+                  {/* Tarikh Masuk / Mendaftar */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-slate-700 font-medium flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5 text-blue-700" />
+                        Tarikh Masuk / Mendaftar <span className="text-rose-500">*</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Quick set to 1st of next month (e.g. Nov 2026)
+                          const d = new Date();
+                          d.setMonth(d.getMonth() + 1);
+                          d.setDate(1);
+                          setFormData({ ...formData, registrationDate: d.toISOString().split('T')[0] });
+                        }}
+                        className="text-[10px] text-blue-700 hover:underline font-semibold"
+                      >
+                        Bulan Depan (1hb)
+                      </button>
+                    </div>
+                    <input
+                      type="date"
+                      required
+                      value={formData.registrationDate}
+                      onChange={(e) => setFormData({ ...formData, registrationDate: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-600 font-mono font-medium text-slate-900 bg-white"
+                    />
+                    <div className="mt-1.5 p-2 rounded-lg bg-blue-50 border border-blue-200 text-[11px] text-blue-900 flex items-start gap-1.5">
+                      <Info className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                      <span>
+                        Yuran bulanan pelajar ini <strong>HANYA akan bermula dari bulan {formData.registrationDate ? formatMonthNameMalay(formData.registrationDate.substring(0, 7)) : 'pendaftaran'}</strong>. Pelajar ini TIDAK akan dicaj bagi bulan sebelum ini.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Status Keahlian */}
+                  <div>
+                    <label className="block text-slate-700 font-medium mb-1">
+                      Status Pelajar
+                    </label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => {
+                        const newStatus = e.target.value as Student['status'];
+                        setFormData({ 
+                          ...formData, 
+                          status: newStatus,
+                          exitDate: newStatus === 'inactive' && !formData.exitDate ? new Date().toISOString().split('T')[0] : formData.exitDate
+                        });
+                      }}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-600 font-medium text-slate-800 bg-white"
+                    >
+                      <option value="active">🟢 Aktif (Sedang Belajar)</option>
+                      <option value="suspended">🟡 Cuti Sementara / Tangguh</option>
+                      <option value="inactive">🔴 Telah Berhenti / Keluar</option>
+                    </select>
+
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      {formData.status === 'active' && 'Pelajar aktif akan menerima jadual kelas dan invois yuran bulanan.'}
+                      {formData.status === 'suspended' && 'Pelajar cuti sementara ditangguhkan daripada aktiviti dan semakan kehadiran.'}
+                      {formData.status === 'inactive' && 'Pelajar telah keluar tidak akan dikenakan yuran bulanan bagi bulan selepas tarikh keluar.'}
+                    </p>
+                  </div>
+
+                </div>
+
+                {/* Sekiranya status 'inactive' (Telah Keluar/Berhenti) */}
+                {formData.status === 'inactive' && (
+                  <div className="bg-rose-50/70 border border-rose-200 p-3.5 rounded-xl space-y-3">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-rose-900">
+                      <LogOut className="w-4 h-4 text-rose-600" />
+                      Rekod Maklumat Pelajar Keluar / Berhenti Tuisyen
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-700 font-medium mb-1 text-xs">
+                          Tarikh Berhenti / Keluar <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.exitDate}
+                          onChange={(e) => setFormData({ ...formData, exitDate: e.target.value })}
+                          className="w-full px-3 py-1.5 border border-rose-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-rose-500 font-mono text-xs bg-white text-slate-900"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-medium mb-1 text-xs">
+                          Sebab Berhenti / Tamat
+                        </label>
+                        <select
+                          value={formData.exitReason}
+                          onChange={(e) => setFormData({ ...formData, exitReason: e.target.value })}
+                          className="w-full px-3 py-1.5 border border-rose-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-rose-500 text-xs bg-white text-slate-800"
+                        >
+                          <option value="">-- Pilih Sebab Berhenti --</option>
+                          <option value="Selesai Peperiksaan SPM / Tamat Persekolahan">Selesai Peperiksaan SPM / Tamat Persekolahan</option>
+                          <option value="Berpindah Rumah / Sekolah">Berpindah Rumah / Sekolah</option>
+                          <option value="Pertindihan Jadual Harian / Ko-kurikulum">Pertindihan Jadual Harian / Ko-kurikulum</option>
+                          <option value="Kekangan Kewangan / Yuran">Kekangan Kewangan / Yuran</option>
+                          <option value="Lain-lain / Urusan Peribadi">Lain-lain / Urusan Peribadi</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
               </div>
 
               {/* Action Buttons */}
@@ -780,14 +982,31 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
               {/* Header Info */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-blue-50/60 p-4 rounded-xl border border-blue-100 gap-4">
                 <div>
-                  <h4 className="text-base font-bold text-blue-950">
-                    {selectedStudentDetail.name}
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-base font-bold text-blue-950">
+                      {selectedStudentDetail.name}
+                    </h4>
+                    {selectedStudentDetail.status === 'active' && (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                        Aktif
+                      </span>
+                    )}
+                    {selectedStudentDetail.status === 'suspended' && (
+                      <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
+                        Cuti Sementara
+                      </span>
+                    )}
+                    {selectedStudentDetail.status === 'inactive' && (
+                      <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-bold">
+                        Telah Berhenti / Keluar
+                      </span>
+                    )}
+                  </div>
                   <p className="text-slate-600 mt-0.5">
                     {selectedStudentDetail.level} · {selectedStudentDetail.school || 'Tiada maklumat sekolah'}
                   </p>
                   <p className="text-slate-500 font-mono text-[11px] mt-1">
-                    No. IC: {selectedStudentDetail.icOrMyKid || '-'} · Daftar: {selectedStudentDetail.registrationDate}
+                    No. IC: {selectedStudentDetail.icOrMyKid || '-'} · No Telefon: {selectedStudentDetail.parentPhone}
                   </p>
                 </div>
 
@@ -805,6 +1024,48 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
                     <MessageCircle className="w-3.5 h-3.5" />
                     WhatsApp Penjaga
                   </a>
+                </div>
+              </div>
+
+              {/* Rekod Tempoh Pendaftaran & Keluar */}
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    Tarikh Masuk / Mendaftar
+                  </span>
+                  <span className="font-mono font-bold text-slate-900 text-sm block mt-0.5">
+                    {selectedStudentDetail.registrationDate || '-'}
+                  </span>
+                  <span className="text-[10px] text-blue-700 mt-0.5 block font-medium">
+                    Yuran bermula: {selectedStudentDetail.registrationDate ? formatMonthNameMalay(selectedStudentDetail.registrationDate.substring(0, 7)) : '-'}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    Tarikh Keluar / Tamat
+                  </span>
+                  <span className={`font-mono font-bold text-sm block mt-0.5 ${
+                    selectedStudentDetail.exitDate ? 'text-rose-700' : 'text-emerald-700'
+                  }`}>
+                    {selectedStudentDetail.exitDate || 'Masih Belajar (Aktif)'}
+                  </span>
+                  {selectedStudentDetail.exitReason && (
+                    <span className="text-[10px] text-rose-600 mt-0.5 block font-medium">
+                      Sebab: {selectedStudentDetail.exitReason}
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    Polisi Yuran Bulanan
+                  </span>
+                  <span className="text-[11px] text-slate-700 block mt-0.5 font-medium leading-tight">
+                    {selectedStudentDetail.exitDate 
+                      ? `Hanya dikenakan bagi tempoh berdaftar sehingga ${selectedStudentDetail.exitDate}.`
+                      : `Dikenakan bermula ${selectedStudentDetail.registrationDate ? formatMonthNameMalay(selectedStudentDetail.registrationDate.substring(0, 7)) : 'bulan pendaftaran'} secara berterusan.`}
+                  </span>
                 </div>
               </div>
 
@@ -884,6 +1145,89 @@ export const StudentManager: React.FC<StudentManagerProps> = ({
                 Tutup
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Pantas: Tandakan Pelajar Berhenti / Keluar */}
+      {quickExitStudent && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
+            <div className="bg-rose-50 px-6 py-4 border-b border-rose-100 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-rose-900 font-bold text-sm">
+                <LogOut className="w-4 h-4 text-rose-600" />
+                <span>Tandakan Pelajar Keluar / Berhenti</span>
+              </div>
+              <button
+                onClick={() => setQuickExitStudent(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleQuickExitSubmit} className="p-6 space-y-4 text-xs">
+              <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <span className="text-[11px] text-slate-500 block">Nama Pelajar:</span>
+                <span className="text-sm font-bold text-slate-900">{quickExitStudent.name}</span>
+                <span className="text-slate-600 text-[11px] block mt-0.5">
+                  {quickExitStudent.level} · Tarikh Daftar: {quickExitStudent.registrationDate}
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-medium mb-1">
+                  Tarikh Berhenti / Keluar <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={quickExitDate}
+                  onChange={(e) => setQuickExitDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-rose-500 font-mono text-xs bg-white text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-medium mb-1">
+                  Sebab Berhenti / Keluar
+                </label>
+                <select
+                  value={quickExitReason}
+                  onChange={(e) => setQuickExitReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-rose-500 text-xs bg-white text-slate-800"
+                >
+                  <option value="Selesai Peperiksaan SPM / Tamat Pengajian">Selesai Peperiksaan SPM / Tamat Pengajian</option>
+                  <option value="Berpindah Rumah / Sekolah">Berpindah Rumah / Sekolah</option>
+                  <option value="Pertindihan Jadual Harian / Sekolah">Pertindihan Jadual Harian / Sekolah</option>
+                  <option value="Kekangan Kewangan / Yuran">Kekangan Kewangan / Yuran</option>
+                  <option value="Lain-lain / Urusan Peribadi">Lain-lain / Urusan Peribadi</option>
+                </select>
+              </div>
+
+              <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex items-start gap-1.5">
+                <Info className="w-3.5 h-3.5 text-amber-700 shrink-0 mt-0.5" />
+                <span>
+                  Pelajar ini akan ditukar status kepada <strong>Telah Keluar</strong> dan tidak akan dikenakan invois yuran bagi bulan selepas tarikh keluar.
+                </span>
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setQuickExitStudent(null)}
+                  className="px-3.5 py-1.5 text-slate-600 hover:bg-slate-100 rounded-lg font-medium"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg shadow-sm"
+                >
+                  Sahkan Pelajar Keluar
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

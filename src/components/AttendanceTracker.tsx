@@ -11,10 +11,12 @@ import {
   MessageCircle, 
   ChevronLeft, 
   ChevronRight,
-  Filter
+  Filter,
+  BarChart3
 } from 'lucide-react';
 import { AttendanceRecord, AttendanceStatus, ClassSession, Student, CenterSettings } from '../types';
 import { generateAttendanceWhatsAppUrl, formatWhatsAppNumber } from '../utils/whatsapp';
+import { MonthlyAttendanceAnalysis } from './MonthlyAttendanceAnalysis';
 
 interface AttendanceTrackerProps {
   classes: ClassSession[];
@@ -22,6 +24,7 @@ interface AttendanceTrackerProps {
   attendance: AttendanceRecord[];
   settings: CenterSettings;
   selectedClassId?: string;
+  initialMode?: 'daily' | 'monthly';
   onSaveAttendance: (records: AttendanceRecord[]) => void;
 }
 
@@ -31,8 +34,10 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
   attendance,
   settings,
   selectedClassId: initialClassId,
+  initialMode = 'daily',
   onSaveAttendance
 }) => {
+  const [viewMode, setViewMode] = useState<'daily' | 'monthly'>(initialMode);
   const todayStr = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
   const [selectedClassId, setSelectedClassId] = useState<string>(
@@ -143,18 +148,38 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
   return (
     <div className="space-y-6">
       
-      {/* Title & Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-            Pengurusan & Semakan Kehadiran Sesi
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Merekod kehadiran pelajar, menjejak peratus kehadiran, dan menghantar notis ke WhatsApp ibu bapa.
-          </p>
+      {/* Top Navigation Tabs: Sesi Harian vs Analisis Kehadiran Bulanan */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3 no-print">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode('daily')}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-colors ${
+              viewMode === 'daily'
+                ? 'bg-blue-700 text-white shadow-xs'
+                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <CheckSquare className="w-4 h-4" />
+            <span>Semakan Sesi Harian</span>
+          </button>
+
+          <button
+            onClick={() => setViewMode('monthly')}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-colors ${
+              viewMode === 'monthly'
+                ? 'bg-blue-700 text-white shadow-xs'
+                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span>Analisis Kehadiran Bulanan</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+              Baru
+            </span>
+          </button>
         </div>
 
-        {enrolledStudents.length > 0 && (
+        {viewMode === 'daily' && enrolledStudents.length > 0 && (
           <button
             onClick={handleMarkAllPresent}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 rounded-lg transition-colors border border-emerald-300 shadow-xs"
@@ -164,6 +189,27 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
           </button>
         )}
       </div>
+
+      {viewMode === 'monthly' ? (
+        <MonthlyAttendanceAnalysis
+          classes={classes}
+          students={students}
+          attendance={attendance}
+          settings={settings}
+        />
+      ) : (
+        <>
+          {/* Title & Header for Daily Session */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                Pengurusan & Semakan Kehadiran Sesi
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Merekod kehadiran pelajar harian mengikut jadual kelas dan menghantar notis terus ke WhatsApp ibu bapa.
+              </p>
+            </div>
+          </div>
 
       {/* Date & Class Select Bar */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
@@ -380,6 +426,8 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
         <div className="py-12 bg-white rounded-xl border border-slate-200 text-center text-slate-400">
           Sila tambah kelas tuisyen terlebih dahulu pada modul "Jadual Kelas".
         </div>
+      )}
+      </>
       )}
 
     </div>

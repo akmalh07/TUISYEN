@@ -16,7 +16,10 @@ import {
   MessageCircle, 
   Building, 
   ArrowUpRight,
-  RotateCcw
+  RotateCcw,
+  Trash2,
+  Info,
+  ShieldAlert
 } from 'lucide-react';
 import { PaymentRecord, Student, ClassSession, CenterSettings, PaymentStatus, PaymentMethod } from '../types';
 import { formatMonthNameMalay, generateFeeReminderWhatsAppUrl } from '../utils/whatsapp';
@@ -28,6 +31,7 @@ interface FeeBillingHubProps {
   settings: CenterSettings;
   onUpdatePayment: (payment: PaymentRecord) => void;
   onAddPayment: (payment: Omit<PaymentRecord, 'id'>) => void;
+  onDeletePayment?: (paymentId: string) => void;
   onViewReceipt: (payment: PaymentRecord, student: Student) => void;
 }
 
@@ -38,6 +42,7 @@ export const FeeBillingHub: React.FC<FeeBillingHubProps> = ({
   settings,
   onUpdatePayment,
   onAddPayment,
+  onDeletePayment,
   onViewReceipt
 }) => {
   const [selectedMonth, setSelectedMonth] = useState<string>('2026-10');
@@ -58,11 +63,39 @@ export const FeeBillingHub: React.FC<FeeBillingHubProps> = ({
   const [paymentNotesInput, setPaymentNotesInput] = useState<string>('');
 
   // Generate missing fee bills for students for selected month
+  // ONLY for students who registered on or before selectedMonth and haven't exited before selectedMonth
   const handleGenerateMonthlyBills = () => {
     let generatedCount = 0;
-    const activeStudents = students.filter(s => s.status === 'active' && s.monthlyFee > 0);
+    let skippedBeforeRegCount = 0;
 
-    activeStudents.forEach(student => {
+    // Filter students eligible for this specific month
+    const eligibleStudents = students.filter(student => {
+      if (student.monthlyFee <= 0) return false;
+      if (student.status === 'inactive' && !student.exitDate) return false;
+
+      // Extract month YYYY-MM
+      const regMonth = student.registrationDate && student.registrationDate.length >= 7 
+        ? student.registrationDate.substring(0, 7) 
+        : '2026-01';
+
+      // Pelajar HANYA dikenakan yuran jika bulan yang dipilih adalah sama atau selepas bulan pendaftaran
+      if (selectedMonth < regMonth) {
+        skippedBeforeRegCount++;
+        return false;
+      }
+
+      // Jika pelajar telah keluar/berhenti, jangan caj bulan selepas tarikh keluar
+      if (student.exitDate && student.exitDate.length >= 7) {
+        const exitMonth = student.exitDate.substring(0, 7);
+        if (selectedMonth > exitMonth) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    eligibleStudents.forEach(student => {
       const exists = payments.some(p => p.studentId === student.id && p.month === selectedMonth);
       if (!exists) {
         const nextReceiptNum = `${settings.receiptPrefix}-${String(payments.length + generatedCount + 1).padStart(4, '0')}`;
@@ -75,16 +108,24 @@ export const FeeBillingHub: React.FC<FeeBillingHubProps> = ({
           paymentMethod: 'DuitNow / Bank Transfer',
           status: 'unpaid',
           receivedBy: settings.principalName,
-          notes: 'Dijana secara automatik mengikut pakej berdaftar'
+          notes: `Invois yuran bulanan (${formatMonthNameMalay(selectedMonth)})`
         });
         generatedCount++;
       }
     });
 
     if (generatedCount > 0) {
-      alert(`Berjaya menjana ${generatedCount} invois yuran baharu untuk bulan ${formatMonthNameMalay(selectedMonth)}.`);
+      let msg = `Berjaya menjana ${generatedCount} invois yuran bagi bulan ${formatMonthNameMalay(selectedMonth)}.`;
+      if (skippedBeforeRegCount > 0) {
+        msg += ` (${skippedBeforeRegCount} pelajar dikecualikan kerana mendaftar pada bulan selepas ini).`;
+      }
+      alert(msg);
     } else {
-      alert(`Semua pelajar aktif telah mempunyai rekod yuran bagi bulan ${formatMonthNameMalay(selectedMonth)}.`);
+      let msg = `Semua pelajar yang layak telah mempunyai rekod yuran bagi bulan ${formatMonthNameMalay(selectedMonth)}.`;
+      if (skippedBeforeRegCount > 0) {
+        msg += `\nNota: ${skippedBeforeRegCount} pelajar belum dikenakan yuran kerana tarikh mula pendaftaran mereka adalah pada bulan selepas ini (contoh: November).`;
+      }
+      alert(msg);
     }
   };
 
@@ -165,6 +206,23 @@ export const FeeBillingHub: React.FC<FeeBillingHubProps> = ({
     return matchesSearch && matchesStatus;
   });
 
+  // Detect any payments mistakenly generated for a student before their registration month
+  const invalidPreRegPayments = monthPayments.filter(payment => {
+    const student = students.find(s => s.id === payment.studentId);
+    if (!student) return false;
+    const regMonth = student.registrationDate && student.registrationDate.length >= 7 
+      ? student.registrationDate.substring(0, 7) 
+      : '2026-01';
+    return selectedMonth < regMonth;
+  });
+
+  const handleCleanupPreRegBills = () => {
+    if (!onDeletePayment) return;
+    if (confirm(`Padam ${invalidPreRegPayments.length} rekod invois bagi pelajar yang mendaftar pada bulan terkehadapan? Pelajar-pelajar ini akan mula dicaj pada bulan pendaftaran mereka yang sebenar.`)) {
+      invalidPreRegPayments.forEach(p => onDeletePayment(p.id));
+    }
+  };
+
   // Calculate monthly metrics
   const totalDueMonth = monthPayments.reduce((sum, p) => sum + p.amountDue, 0);
   const totalCollectedMonth = monthPayments.reduce((sum, p) => sum + p.amountPaid, 0);
@@ -195,6 +253,30 @@ export const FeeBillingHub: React.FC<FeeBillingHubProps> = ({
           Jana Bil Yuran ({formatMonthNameMalay(selectedMonth)})
         </button>
       </div>
+
+      {/* Alert Banner: Invois Pra-Pendaftaran Dikesan (jika wujud) */}
+      {invalidPreRegPayments.length > 0 && (
+        <div className="p-4 bg-amber-50 border border-amber-300 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-amber-900 shadow-xs">
+          <div className="flex items-start gap-2.5 text-xs">
+            <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <strong className="font-bold text-sm block">Penyelarasan Invois Pra-Pendaftaran Diperlukan</strong>
+              <span>
+                Terdapat <strong>{invalidPreRegPayments.length} invois</strong> pada bulan {formatMonthNameMalay(selectedMonth)} bagi pelajar yang mendaftar pada bulan selepas ini (contoh: November). Mengikut peraturan tuisyen, yuran pelajar hanya bermula pada bulan pendaftarannya.
+              </span>
+            </div>
+          </div>
+          {onDeletePayment && (
+            <button
+              onClick={handleCleanupPreRegBills}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-amber-700 hover:bg-amber-800 rounded-lg transition-colors shrink-0 shadow-xs"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Padam & Selaraskan ({invalidPreRegPayments.length})
+            </button>
+          )}
+        </div>
+      )}
 
       {/* KPI Financial Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -327,9 +409,18 @@ export const FeeBillingHub: React.FC<FeeBillingHubProps> = ({
 
                   const balance = Math.max(0, payment.amountDue - payment.amountPaid);
                   const isFullyPaid = payment.status === 'paid';
+                  const regMonth = student.registrationDate && student.registrationDate.length >= 7 
+                    ? student.registrationDate.substring(0, 7) 
+                    : '2026-01';
+                  const isPreRegBill = selectedMonth < regMonth;
 
                   return (
-                    <tr key={payment.id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr 
+                      key={payment.id} 
+                      className={`hover:bg-slate-50/50 transition-colors ${
+                        isPreRegBill ? 'bg-amber-50/30' : ''
+                      }`}
+                    >
                       <td className="py-3.5 px-4 font-mono font-medium text-slate-800">
                         {payment.receiptNumber}
                       </td>
@@ -341,6 +432,12 @@ export const FeeBillingHub: React.FC<FeeBillingHubProps> = ({
                         <div className="text-slate-500 text-[11px] mt-0.5">
                           {student.parentName} · {student.parentPhone}
                         </div>
+                        {isPreRegBill && (
+                          <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[10px] font-semibold border border-amber-300">
+                            <AlertTriangle className="w-3 h-3 text-amber-700 shrink-0" />
+                            Daftar {formatMonthNameMalay(regMonth)} (Yuran sepatutnya mula {formatMonthNameMalay(regMonth)})
+                          </span>
+                        )}
                       </td>
 
                       <td className="py-3.5 px-4">
@@ -423,6 +520,21 @@ export const FeeBillingHub: React.FC<FeeBillingHubProps> = ({
                               className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors"
                             >
                               <MessageCircle className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {/* Butang: Padam Invois (jika silap jana atau pra-pendaftaran) */}
+                          {onDeletePayment && (
+                            <button
+                              onClick={() => {
+                                if (confirm(`Adakah anda pasti ingin memadam rekod invois ${payment.receiptNumber} bagi ${student.name}?`)) {
+                                  onDeletePayment(payment.id);
+                                }
+                              }}
+                              title="Padam Invois Ini"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           )}
 

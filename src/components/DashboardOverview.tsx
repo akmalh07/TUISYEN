@@ -29,6 +29,7 @@ import {
 import { Student, ClassSession, PaymentRecord, AttendanceRecord, DayOfWeek, CenterSettings } from '../types';
 import { formatMonthNameMalay, generateFeeReminderWhatsAppUrl } from '../utils/whatsapp';
 import { NavTab } from './Navbar';
+import { MonthlyRevenueFlowChart } from './MonthlyRevenueFlowChart';
 
 interface DashboardOverviewProps {
   students: Student[];
@@ -83,25 +84,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     ? Math.round((todayPresentCount / todayAttendanceRecords.length) * 100)
     : 100;
 
-  // 1. Data for Monthly Fee Collection Trend (Recharts) - 100% data sebenar
-  // Dapatkan semua bulan yang benar-benar wujud dalam rekod pembayaran
-  const uniqueMonths = Array.from(new Set(payments.map(p => p.month))).sort();
-
-  const feeTrendData = uniqueMonths.map(m => {
-    const mPayments = payments.filter(p => p.month === m);
-    const due = mPayments.reduce((sum, p) => sum + p.amountDue, 0);
-    const paid = mPayments.reduce((sum, p) => sum + p.amountPaid, 0);
-    const unpaid = Math.max(0, due - paid);
-
-    return {
-      bulan: formatMonthNameMalay(m),
-      Kutipan: paid,
-      Tertunggak: unpaid,
-      Sasaran: due
-    };
-  });
-
-  // 2. Data for Student Attendance by Class/Subject (Recharts) - 100% data sebenar
+  // Data for Student Attendance by Class/Subject (Recharts) - 100% data sebenar
   const attendanceData = classes.map(cls => {
     const classRecords = attendance.filter(a => a.classId === cls.id);
     const present = classRecords.filter(a => a.status === 'present').length;
@@ -253,167 +236,100 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
       </div>
 
-      {/* Visual Analytics & Charts Section (Recharts) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Chart 1: Trend Kutipan Yuran Bulanan */}
-        <div className="bg-white p-5 sm:p-6 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-blue-50 text-blue-700 rounded-md">
-                  <DollarSign className="w-4 h-4" />
-                </div>
-                <h3 className="font-bold text-slate-900 text-sm tracking-tight">
-                  Trend Kutipan Yuran Bulanan (RM)
-                </h3>
+      {/* 1. Aliran Kutipan Yuran Bulanan & Trend Pendapatan (Recharts Component) */}
+      <MonthlyRevenueFlowChart
+        payments={payments}
+        students={students}
+        onNavigateToFees={() => setActiveTab('fees')}
+      />
+
+      {/* 2. Analisis Kehadiran Pelajar Mengikut Subjek Kelas (Recharts) */}
+      <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-emerald-50 text-emerald-700 rounded-lg shadow-xs">
+                <BarChart3 className="w-5 h-5" />
               </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Perbandingan jumlah yuran dikutip vs yuran tertunggak 5 bulan terkini
-              </p>
-            </div>
-            <div className="flex items-center gap-3 text-[11px]">
-              <span className="flex items-center gap-1.5 text-slate-600">
-                <span className="w-2.5 h-2.5 rounded-xs bg-blue-600" />
-                Dikutip
-              </span>
-              <span className="flex items-center gap-1.5 text-slate-600">
-                <span className="w-2.5 h-2.5 rounded-xs bg-rose-500" />
-                Tertunggak
-              </span>
+              <div>
+                <h3 className="font-bold text-slate-900 text-base tracking-tight">
+                  Statistik & Kadar Kehadiran Pelajar Mengikut Subjek (%)
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Peratusan kehadiran pelajar mengikut pecahan subjek & kelas berjadual pusat tuisyen.
+                </p>
+              </div>
             </div>
           </div>
-
-          {feeTrendData.length > 0 ? (
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={feeTrendData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                  <XAxis 
-                    dataKey="bulan" 
-                    tick={{ fontSize: 11, fill: '#64748B' }} 
-                    axisLine={{ stroke: '#E2E8F0' }}
-                    tickLine={false}
-                  />
-                  <YAxis 
-                    tick={{ fontSize: 11, fill: '#64748B' }} 
-                    axisLine={false} 
-                    tickLine={false}
-                    tickFormatter={(val) => `RM${val}`}
-                  />
-                  <Tooltip 
-                    formatter={(value: any, name: any) => [`RM ${Number(value).toFixed(2)}`, name]}
-                    contentStyle={{ 
-                      backgroundColor: '#0F172A', 
-                      borderRadius: '8px', 
-                      border: 'none', 
-                      color: '#FFFFFF',
-                      fontSize: '11px',
-                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                    }}
-                    itemStyle={{ color: '#FFFFFF' }}
-                    labelStyle={{ fontWeight: 'bold', color: '#94A3B8', marginBottom: '4px' }}
-                  />
-                  <Bar dataKey="Kutipan" fill="#2563EB" radius={[4, 4, 0, 0]} name="Kutipan (RM)" maxBarSize={32} />
-                  <Bar dataKey="Tertunggak" fill="#F43F5E" radius={[4, 4, 0, 0]} name="Tertunggak (RM)" maxBarSize={32} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="h-64 flex flex-col items-center justify-center text-center p-6 bg-slate-50 rounded-lg border border-dashed border-slate-200 text-slate-400">
-              <DollarSign className="w-8 h-8 text-slate-300 mb-2" />
-              <p className="text-xs font-semibold text-slate-600">Tiada Data Rekod Yuran</p>
-              <p className="text-[11px] text-slate-400 mt-1 max-w-xs">
-                Carta trend kutipan akan dijana secara automatik mengikut data sebenar apabila rekod yuran wujud.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Chart 2: Analisis Kehadiran Pelajar Mengikut Subjek Kelas */}
-        <div className="bg-white p-5 sm:p-6 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-emerald-50 text-emerald-700 rounded-md">
-                  <BarChart3 className="w-4 h-4" />
-                </div>
-                <h3 className="font-bold text-slate-900 text-sm tracking-tight">
-                  Statistik & Kadar Kehadiran Pelajar (%)
-                </h3>
-              </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Peratusan kehadiran pelajar mengikut pecahan subjek & kelas berjadual
-              </p>
-            </div>
-            <div className="flex items-center gap-3 text-[11px]">
-              <span className="flex items-center gap-1.5 text-slate-600">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
-                % Hadir
-              </span>
-            </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab('attendance')}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <span>Buka Analisis Kehadiran Bulanan</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </div>
-
-          {attendanceData.some(d => d.totalRecorded > 0) ? (
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={attendanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                  <XAxis 
-                    dataKey="subjek" 
-                    tick={{ fontSize: 10, fill: '#64748B' }} 
-                    axisLine={{ stroke: '#E2E8F0' }}
-                    tickLine={false}
-                  />
-                  <YAxis 
-                    domain={[0, 100]} 
-                    tick={{ fontSize: 11, fill: '#64748B' }} 
-                    axisLine={false} 
-                    tickLine={false}
-                    tickFormatter={(val) => `${val}%`}
-                  />
-                  <Tooltip 
-                    formatter={(value: any, name: any, item: any) => {
-                      if (name === 'PeratusHadir') {
-                        return [`${value}% (Hadir: ${item.payload.Hadir}, Tidak: ${item.payload.TidakHadir})`, 'Kadar Kehadiran'];
-                      }
-                      return [value, name];
-                    }}
-                    labelFormatter={(_label, payload) => {
-                      return payload && payload[0] ? payload[0].payload.namaPenuh : '';
-                    }}
-                    contentStyle={{ 
-                      backgroundColor: '#0F172A', 
-                      borderRadius: '8px', 
-                      border: 'none', 
-                      color: '#FFFFFF',
-                      fontSize: '11px',
-                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                    }}
-                    itemStyle={{ color: '#FFFFFF' }}
-                    labelStyle={{ fontWeight: 'bold', color: '#94A3B8', marginBottom: '4px' }}
-                  />
-                  <Bar 
-                    dataKey="PeratusHadir" 
-                    fill="#059669" 
-                    radius={[4, 4, 0, 0]} 
-                    name="PeratusHadir"
-                    maxBarSize={32} 
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="h-64 flex flex-col items-center justify-center text-center p-6 bg-slate-50 rounded-lg border border-dashed border-slate-200 text-slate-400">
-              <BarChart3 className="w-8 h-8 text-slate-300 mb-2" />
-              <p className="text-xs font-semibold text-slate-600">Belum Ada Rekod Kehadiran Direkodkan</p>
-              <p className="text-[11px] text-slate-400 mt-1 max-w-xs">
-                Peratusan kehadiran akan dipaparkan secara automatik mengikut data sebenar setelah anda mengambil kehadiran sesi.
-              </p>
-            </div>
-          )}
         </div>
 
+        {attendanceData.some(d => d.totalRecorded > 0) ? (
+          <div className="h-64 sm:h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={attendanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                <XAxis 
+                  dataKey="subjek" 
+                  tick={{ fontSize: 11, fill: '#64748B' }} 
+                  axisLine={{ stroke: '#E2E8F0' }}
+                  tickLine={false}
+                />
+                <YAxis 
+                  domain={[0, 100]} 
+                  tick={{ fontSize: 11, fill: '#64748B' }} 
+                  axisLine={false} 
+                  tickLine={false}
+                  tickFormatter={(val) => `${val}%`}
+                />
+                <Tooltip 
+                  formatter={(value: any, name: any, item: any) => {
+                    if (name === 'PeratusHadir') {
+                      return [`${value}% (Hadir: ${item.payload.Hadir}, Tidak: ${item.payload.TidakHadir})`, 'Kadar Kehadiran'];
+                    }
+                    return [value, name];
+                  }}
+                  labelFormatter={(_label, payload) => {
+                    return payload && payload[0] ? payload[0].payload.namaPenuh : '';
+                  }}
+                  contentStyle={{ 
+                    backgroundColor: '#0F172A', 
+                    borderRadius: '8px', 
+                    border: 'none', 
+                    color: '#FFFFFF',
+                    fontSize: '11px',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                  }}
+                  itemStyle={{ color: '#FFFFFF' }}
+                  labelStyle={{ fontWeight: 'bold', color: '#94A3B8', marginBottom: '4px' }}
+                />
+                <Bar 
+                  dataKey="PeratusHadir" 
+                  fill="#059669" 
+                  radius={[4, 4, 0, 0]} 
+                  name="PeratusHadir"
+                  maxBarSize={36} 
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="h-56 flex flex-col items-center justify-center text-center p-6 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-400">
+            <BarChart3 className="w-8 h-8 text-slate-300 mb-2" />
+            <p className="text-xs font-semibold text-slate-600">Belum Ada Rekod Kehadiran Direkodkan</p>
+            <p className="text-[11px] text-slate-400 mt-1 max-w-xs">
+              Peratusan kehadiran akan dipaparkan secara automatik mengikut data sebenar setelah anda mengambil kehadiran sesi.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Main Grid: Today's Classes & Pending Fee Reminders */}

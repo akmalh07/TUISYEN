@@ -142,3 +142,47 @@ export function generateGradeWhatsAppUrl(
 
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
+
+/**
+ * Generate WhatsApp link for Monthly Attendance Report.
+ */
+export function generateMonthlyAttendanceWhatsAppUrl(
+  student: Student,
+  monthStr: string,
+  presentCount: number,
+  absentCount: number,
+  excusedCount: number,
+  totalSessions: number,
+  attendanceRate: number,
+  settings: CenterSettings
+): string {
+  const phone = formatWhatsAppNumber(student.parentPhone);
+  const monthMalay = formatMonthNameMalay(monthStr);
+
+  const statusDesc = attendanceRate >= 90 
+    ? '🌟 CEMERLANG' 
+    : attendanceRate >= 75 
+    ? '✅ BAIK' 
+    : '⚠️ PERLU PERHATIAN';
+
+  const message = `Assalamualaikum & Salam Sejahtera Tuan/Puan ${student.parentName},\n\n` +
+    `*RINGKASAN KEHADIRAN BULANAN PELAJAR*\n` +
+    `Pihak *${settings.centerName}* ingin berkongsi rekod kehadiran anak tuan/puan bagi bulan *${monthMalay}*:\n\n` +
+    `👤 *Nama Pelajar:* ${student.name} (${student.level})\n` +
+    `🗓️ *Bulan:* ${monthMalay}\n` +
+    `📊 *Peratus Kehadiran:* *${attendanceRate}%* (${statusDesc})\n\n` +
+    `Perincian Sesi Kelas:\n` +
+    `• Jumlah Sesi Dijalankan: ${totalSessions} sesi\n` +
+    `• Hadir: ${presentCount} sesi\n` +
+    `• Tidak Hadir: ${absentCount} sesi\n` +
+    `• Bersebab / Cuti: ${excusedCount} sesi\n\n` +
+    (absentCount > 0 
+      ? `Kerjasama tuan/puan untuk memastikan kehadiran penuh ke kelas amat kami hargai demi kesinambungan pembelajaran anak.\n\n` 
+      : `Tahniah atas komitmen kehadiran yang konsisten!\n\n`) +
+    `Sekiranya ada pertanyaan, sila hubungi kami di talian ${settings.phone}.\n\n` +
+    `Terima kasih.\n` +
+    `*${settings.centerName}*`;
+
+  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+}
+

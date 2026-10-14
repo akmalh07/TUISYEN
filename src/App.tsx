@@ -59,8 +59,11 @@ export default function App() {
       id: newId
     };
 
-    // Auto generate first payment record for current month if student has fee
-    const currentMonth = '2026-10';
+    // Auto generate first payment record for the student's registration month (NOT hardcoded)
+    const regMonth = newStudent.registrationDate && newStudent.registrationDate.length >= 7
+      ? newStudent.registrationDate.substring(0, 7)
+      : new Date().toISOString().substring(0, 7);
+
     let updatedPayments = [...appState.payments];
     if (newStudent.monthlyFee > 0) {
       const receiptNo = `${appState.settings.receiptPrefix}-${String(appState.payments.length + 1).padStart(4, '0')}`;
@@ -68,13 +71,13 @@ export default function App() {
         id: `pay-${Date.now()}`,
         receiptNumber: receiptNo,
         studentId: newId,
-        month: currentMonth,
+        month: regMonth,
         amountDue: newStudent.monthlyFee,
         amountPaid: 0,
         paymentMethod: 'DuitNow / Bank Transfer',
         status: 'unpaid',
         receivedBy: appState.settings.principalName,
-        notes: 'Invois pendaftaran baharu'
+        notes: `Invois pendaftaran bulan mula masuk (${regMonth})`
       });
     }
 
@@ -166,6 +169,14 @@ export default function App() {
       ...prev,
       payments: [newPayment, ...prev.payments]
     }));
+  };
+
+  const handleDeletePayment = (paymentId: string) => {
+    setAppState(prev => ({
+      ...prev,
+      payments: prev.payments.filter(p => p.id !== paymentId)
+    }));
+    showToast('Rekod invois bayaran telah dipadam.');
   };
 
   const handleViewReceipt = (payment: PaymentRecord, student: Student) => {
@@ -298,6 +309,7 @@ export default function App() {
             settings={appState.settings}
             onUpdatePayment={handleUpdatePayment}
             onAddPayment={handleAddPayment}
+            onDeletePayment={handleDeletePayment}
             onViewReceipt={handleViewReceipt}
           />
         )}

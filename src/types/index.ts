@@ -15,7 +15,9 @@ export interface Student {
   parentEmail?: string;
   registeredClassIds: string[]; // ID kelas yang didaftarkan
   monthlyFee: number; // Jumlah yuran bulanan dalam RM
-  registrationDate: string; // YYYY-MM-DD
+  registrationDate: string; // YYYY-MM-DD (Tarikh Masuk/Mendaftar)
+  exitDate?: string; // YYYY-MM-DD (Tarikh Keluar/Berhenti/Tamat)
+  exitReason?: string; // Sebab berhenti/tamat
   status: StudentStatus;
   notes?: string;
 }
